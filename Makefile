@@ -1,12 +1,18 @@
-GUI = $(HOME)/gui/src
+# Get path to submodules by looking relative to the makefile
+CAD_ENV :=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))/..
+
+GUI = $(CAD_ENV)/gui/src
+GEODE = $(CAD_ENV)/geode
 COMMON_FLAGS = -g -O3 -march=native -mtune=native -funroll-loops -Wall -Winit-self -Woverloaded-virtual -Wsign-compare -fno-strict-aliasing -std=c++11 -Wno-array-bounds -Wno-unknown-pragmas -Wno-deprecated -fPIC -DNDEBUG -DBUILDING_geode -Wno-writable-strings
-COMMON_LIBS = $(GUI)/app.a -lportaudio -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lportaudio -lportmidi
-COMMON_INCS = -I/usr/local/include/OpenEXR -I. -I/usr/local/include -I$(GUI)
+COMMON_LIBS = $(GUI)/app.a -lportaudio -L/usr/local/Cellar/opencv/3.3.0_3/lib -lportaudio -lportmidi
+COMMON_LIBS += -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lopencv_imgcodecs -lopencv_videoio -lopencv_core
+COMMON_INCS = -I/usr/local/include/OpenEXR -I. -I/usr/local/include -I$(GUI) -I$(GEODE) -I$(GEODE)/build
 OS2 := $(strip $(shell uname))
 ifeq ($(OS2), Darwin)
   C++ := clang++
   FLAGS = $(COMMON_FLAGS) -DMACOSX
   LIBS = $(COMMON_LIBS) -framework GLUT -framework OpenGL -lgeode
+  LIBS += -L$(GEODE)/build/geode
   INCS = $(COMMON_INCS) -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include -I. -Ibuild/native/release
   DEFS = -DMACOSX
 else
@@ -15,6 +21,7 @@ else
   ifeq ($(OS), GNU/Linux)
     FLAGS = $(COMMON_FLAGS)
     INCS = $(COMMON_INCS) -I/usr/include/python2.7
+    # TODO: Use geode from submodule instead of installed version from /usr/local/lib
     LIBS = -L/usr/local/lib $(COMMON_LIBS) -lglut -lGL -lGLU -lm /usr/local/lib/libgeode.so
   else
     $(error Unknown OS)

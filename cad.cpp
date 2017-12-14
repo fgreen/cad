@@ -3,6 +3,7 @@
 #include <geode/array/permute.h>
 #include <geode/array/sort.h>
 #include <geode/mesh/decimate.h>
+#include <geode/mesh/simplify.h>
 #include <fstream>
 
 bool has_dups(const RawArray<const Vec3i> raw_elements) {
