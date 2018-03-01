@@ -10,7 +10,11 @@
 #include <geode/geometry/Triangle3d.h>
 #include <geode/geometry/polygon.h>
 #include <geode/geometry/offset_mesh.h>
+#include <geode/geometry/arc_fitting.h>
 #include <geode/exact/mesh_csg.h>
+#include <geode/exact/circle_csg.h>
+#include <geode/exact/circle_offsets.h>
+#include <geode/exact/find_overlapping_offsets.h>
 // #include <geode/exact/delaunay.h>
 #include <geode/exact/polygon_csg.h>
 #include <geode/mesh/SegmentSoup.h>
@@ -128,6 +132,7 @@ public:
   Ref<const TriangleSoup> soup;
   Array<TV3> points;
   Mesh(Ref<const TriangleSoup> soup, Array<TV3> points) : soup(soup), points(points) { }
+  explicit Mesh(const Tuple<Ref<const TriangleSoup>,Array<TV3>> soup_and_points) : soup(soup_and_points.x), points(soup_and_points.y) { }
 };
 
 extern Mesh fab_mesh (Array<IV3> faces, Array<TV3> points);
@@ -171,7 +176,9 @@ extern Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1);
 
 extern Nested<TV2> offset(T a, Nested<TV2> c);
 
-extern Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_cleanup = true);
+const bool global_is_cleanup = true;
+
+extern Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_cleanup = global_is_cleanup);
 
 extern void pretty_print_num(T pt);
 extern void pretty_print_v2d(TV2 pt);
@@ -185,6 +192,7 @@ extern void pretty_print_nested_v3d(Nested<TV3> polyline);
 extern void pretty_print_nested_v2d(Nested<TV2> polyline);
 extern void pretty_print_poly(Nested<TV2> poly);
 extern void pretty_print_mesh(Mesh soup);
+extern void obj_mesh(Mesh soup);
 
 extern std::string num_to_str (T num);
 extern std::string v2d_to_str (TV2 pt);
@@ -203,13 +211,13 @@ extern std::string matrix_to_str(Matrix<T,4> M);
 extern void save_polygon(std::string filename, Nested<TV2> polygon);
 extern void save_polyline(std::string filename, Nested<TV2> polyline);
 
-extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_cleanup = true);
+extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_cleanup = global_is_cleanup);
 
 extern Mesh mesh_from(int start, Mesh soup);
 
 extern Nested<TV2> slice(T z, Mesh soup);
 
-extern Mesh difference(Mesh mesh0, Mesh mesh1, bool is_cleanup = true);
+extern Mesh difference(Mesh mesh0, Mesh mesh1, bool is_cleanup = global_is_cleanup);
 
 template<class ET> Nested<ET> array_to_nested(Array<ET> contour);
 
@@ -257,11 +265,13 @@ template<class E> Nested<E> mul(Matrix<T,4> m, Nested<E> poly) {
   return pres;
 }
 
-extern Nested<TV2> mul_poly(Matrix<T,4> m, Nested<TV2> poly, bool is_invert = false);
+extern Nested<TV2> mul_poly(Matrix<T,4> m, Nested<TV2> poly);
 
-extern Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour, bool is_invert = false);
+extern Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour);
 
-extern Mesh mul(Matrix<T,4> m, Mesh soup, bool is_invert = false);
+extern Mesh mul(Matrix<T,4> m, Mesh soup);
+
+extern Mesh mesh_copy(Mesh mesh);
 
 extern Mesh cone_mesh(T len, Array<TV2> poly);
 
@@ -298,6 +308,8 @@ extern Mesh thicken(int n, T rad, Nested<TV3> polyline);
 extern Nested<TV2> thicken(int n, T rad, Nested<TV2> line);
 
 // extern Mesh offset_mesh(int n, T rad, Mesh mesh);
+
+extern Mesh offset_mesh_rough(T rad, Mesh mesh);
 
 extern Nested<TV2> stroke_char (char letter);
 

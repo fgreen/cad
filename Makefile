@@ -1,12 +1,18 @@
-GUI = $(HOME)/gui/src
+# Get path to submodules by looking relative to the makefile
+CAD_ENV :=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))/..
+
+GUI = $(CAD_ENV)/gui/src
+GEODE = $(CAD_ENV)/geode
 COMMON_FLAGS = -g -O3 -march=native -mtune=native -funroll-loops -Wall -Winit-self -Woverloaded-virtual -Wsign-compare -fno-strict-aliasing -std=c++11 -Wno-array-bounds -Wno-unknown-pragmas -Wno-deprecated -fPIC -DNDEBUG -DBUILDING_geode -Wno-writable-strings
-COMMON_LIBS = $(GUI)/app.a -lportaudio -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lportaudio -lportmidi
-COMMON_INCS = -I/usr/local/include/OpenEXR -I. -I/usr/local/include -I$(GUI)
+COMMON_LIBS = $(GUI)/app.a -lportaudio -lportaudio -lportmidi #  -L/usr/local/Cellar/opencv/3.3.0_3/lib
+COMMON_LIBS += -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lopencv_core # -lopencv_imgcodecs  -lopencv_videoio
+COMMON_INCS = -I/usr/local/include/OpenEXR -I. -I/usr/local/include -I$(GUI) -I$(GEODE) -I$(GEODE)/build
 OS2 := $(strip $(shell uname))
 ifeq ($(OS2), Darwin)
   C++ := clang++
   FLAGS = $(COMMON_FLAGS) -DMACOSX
   LIBS = $(COMMON_LIBS) -framework GLUT -framework OpenGL -lgeode
+  LIBS += -L$(GEODE)/build/geode
   INCS = $(COMMON_INCS) -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include -I. -Ibuild/native/release
   DEFS = -DMACOSX
 else
@@ -15,6 +21,7 @@ else
   ifeq ($(OS), GNU/Linux)
     FLAGS = $(COMMON_FLAGS)
     INCS = $(COMMON_INCS) -I/usr/include/python2.7
+    # TODO: Use geode from submodule instead of installed version from /usr/local/lib
     LIBS = -L/usr/local/lib $(COMMON_LIBS) -lglut -lGL -lGLU -lm /usr/local/lib/libgeode.so
   else
     $(error Unknown OS)
@@ -56,8 +63,8 @@ read-eval.o: cad.h geom.h read-eval.h read-eval.cpp expr.h
 app.o: cad.h app.h read-eval.h app.cpp
 	$(C++) -c $(FLAGS) $(INCS) app.cpp
 
-cad: cad.o hull.o iso-surface.o octree.o expr.o path.o geom.o read-eval.o app.o 
-	$(C++) -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o octree.o expr.o path.o geom.o read-eval.o app.o $(LIBS)
+cad: cad.o hull.o iso-surface.o geom.o read-eval.o app.o expr.o octree.o path.o
+	$(C++) -march=native -g -fPIC -o cad $^ $(LIBS)
 
 cad.a: cad.o hull.o iso-surface.o geom.o octree.o expr.o path.o expr_stub.o
 	ar -v -r -u cad.a $^

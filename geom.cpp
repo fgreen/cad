@@ -25,6 +25,7 @@ std::vector<Geom*> g_args_val(Geom* g) {
   ensure(g->k == args_kind, "NOT ARGS");
   return ((ArgsGeom*)g)->val;
 }
+int g_args_free(Geom* g) { free(g); return 1; }
 
 inline float int_as_float(int xi) {
   float x =  *(float*)&xi;
@@ -36,16 +37,16 @@ inline int float_as_int(float xf) {
   return x;
 }
 
-Geom* g_num_fab(int a) {
-  return g_num((T)int_as_float(a));
+Geom* g_num_fab(float a) {
+  return g_num((T)a);
 }
 double g_num_val(Geom* g) {
   ensure(g->k == num_kind, "NOT NUM");
   return ((NumGeom*)g)->val;
 }
 
-int g_num_value(Geom* g) {
-  return float_as_int(g_num_val(g));
+float g_num_value(Geom* g) {
+  return g_num_val(g);
 }
 
 std::string g_string_val(Geom* g) {
@@ -66,29 +67,45 @@ char* g_string_c_str(Geom* g) {
   return (char*)g_string_val(g).c_str();
 }
 
-Geom* g_v2d_fab(int x, int y) {
-  auto res = g_v2d(vec((T)int_as_float(x), (T)int_as_float(y)));
+Geom* g_v2d_fab(float x, float y) {
+  auto res = g_v2d(vec((T)x, (T)y));
   return res;
 }
 TV2 g_v2d_val(Geom* g) {
   ensure(g->k == v2d_kind, "NOT V2D");
   return ((V2dGeom*)g)->val;
 }
-int g_v2d_elt(Geom* g, int idx)  { return float_as_int(g_v2d_val(g)[idx]); }
-int g_v2d_x(Geom* g) { return float_as_int(g_v2d_val(g).x); }
-int g_v2d_y(Geom* g) { return float_as_int(g_v2d_val(g).y); }
+float g_v2d_elt(Geom* g, int idx)  { return g_v2d_val(g)[idx]; }
+float g_v2d_x(Geom* g) { return g_v2d_val(g).x; }
+float g_v2d_y(Geom* g) { return g_v2d_val(g).y; }
 
-Geom* g_v3d_fab(int x, int y, int z) {
-  return g_v3d(vec((T)int_as_float(x), (T)int_as_float(y), (T)int_as_float(z)));
+Geom* g_v3d_fab(float x, float y, float z) {
+  auto res = g_v3d(vec((T)x, (T)y, (T)z));
+  // printf("%p = [%f, %f, %f]\n", res, x, y, z);
+  return res;
 }
 TV3 g_v3d_val(Geom* g) {
   ensure(g->k == v3d_kind, "NOT V3D");
   return ((V3dGeom*)g)->val;
 }
-int g_v3d_elt(Geom* g, int idx)  { return float_as_int(g_v3d_val(g)[idx]); }
-int g_v3d_x(Geom* g) { return float_as_int(g_v3d_val(g).x); }
-int g_v3d_y(Geom* g) { return float_as_int(g_v3d_val(g).y); }
-int g_v3d_z(Geom* g) { return float_as_int(g_v3d_val(g).z); }
+float g_v3d_elt(Geom* g, int idx)  { return g_v3d_val(g)[idx]; }
+float g_v3d_x(Geom* g) { return g_v3d_val(g).x; }
+float g_v3d_y(Geom* g) { return g_v3d_val(g).y; }
+float g_v3d_z(Geom* g) { return g_v3d_val(g).z; }
+
+Geom* g_circle_arc_fab(float x, float y, float q) {
+  CircleArc data(x, y, q);
+  auto res = g_circle_arc(data);
+  // printf("%p = [%f, %f, %f]\n", res, x, y, z);
+  return res;
+}
+CircleArc g_circle_arc_val(Geom* g) {
+  ensure(g->k == circle_arc_kind, "NOT CIRCLE_ARC");
+  return ((CircleArcGeom*)g)->val;
+}
+float g_circle_arc_x(Geom* g) { return g_circle_arc_val(g).x[0]; }
+float g_circle_arc_y(Geom* g) { return g_circle_arc_val(g).x[1]; }
+float g_circle_arc_q(Geom* g) { return g_circle_arc_val(g).q; }
 
 Geom* g_v3i_fab(int x, int y, int z) { return g_v3i(vec(x, y, z)); }
 IV3 g_v3i_val(Geom* g) {
@@ -104,21 +121,24 @@ int g_v3i_x(Geom* g) { return g_v3i_val(g).x; }
 int g_v3i_y(Geom* g) { return g_v3i_val(g).y; }
 int g_v3i_z(Geom* g) { return g_v3i_val(g).z; }
 
-Geom* g_mat_fab(int i00, int i01, int i02, int i03, int i10, int i11, int i12, int i13,
-                int i20, int i21, int i22, int i23, int i30, int i31, int i32, int i33) {
-  Matrix<T,4> m(int_as_float(i00), int_as_float(i01), int_as_float(i02), int_as_float(i03),
-                int_as_float(i10), int_as_float(i11), int_as_float(i12), int_as_float(i13),
-                int_as_float(i20), int_as_float(i21), int_as_float(i22), int_as_float(i23),
-                int_as_float(i30), int_as_float(i31), int_as_float(i32), int_as_float(i33));
-  return g_mat(m);
+Geom* g_mat_fab(float i00, float i01, float i02, float i03, float i10, float i11, float i12, float i13,
+                float i20, float i21, float i22, float i23, float i30, float i31, float i32, float i33) {
+  Matrix<T,4> m(i00, i01, i02, i03,
+                i10, i11, i12, i13,
+                i20, i21, i22, i23,
+                i30, i31, i32, i33);
+  auto res = g_mat(m);
+  // printf("%p = mat(%f, %f, %f, %f,  %f, %f, %f, %f,  %f, %f, %f, %f,  %f, %f, %f, %f)\n",
+  //        res, i00, i01, i02, i03, i10, i11, i12, i13, i20, i21, i22, i23, i30, i31, i32, i33);
+  return res;
 }
 Matrix<T,4> g_mat_val(Geom* g) {
   ensure(g->k == mat_kind, "NOT MAT");
   return ((MatGeom*)g)->val;
 }
 
-int g_mat_elt(Geom* g, int i, int j) {
-  return float_as_int(g_mat_val(g).x[i][j]);
+float g_mat_elt(Geom* g, int i, int j) {
+  return g_mat_val(g).x[i][j];
 }
 
 Array<TV2> g_array_v2d_val(Geom* g) {
@@ -139,7 +159,6 @@ Array<TV3> g_array_v3d_val(Geom* g) {
   ensure(g->k == array_v3d_kind, "NOT ARRAY_V3D");
   return ((ArrayV3dGeom*)g)->val;
 }
-
 Geom* g_array_v3d_fab(Geom* args) {
   Array<TV3> v;
   for (auto arg : g_args_val(args)) 
@@ -148,6 +167,19 @@ Geom* g_array_v3d_fab(Geom* args) {
 }
 Geom* g_array_v3d_elt(Geom* g, int idx) { return g_v3d(g_array_v3d_val(g)[idx]); }
 int g_array_v3d_len(Geom* g) { return g_array_v3d_val(g).size(); }
+
+Array<CircleArc> g_array_circle_arc_val(Geom* g) {
+  ensure(g->k == array_circle_arc_kind, "NOT ARRAY_CIRCLE_ARC");
+  return ((ArrayCircleArcGeom*)g)->val;
+}
+Geom* g_array_circle_arc_fab(Geom* args) {
+  Array<CircleArc> v;
+  for (auto arg : g_args_val(args)) 
+    v.append(g_circle_arc_val(arg));
+  return g_array_circle_arc(v);
+}
+Geom* g_array_circle_arc_elt(Geom* g, int idx) { return g_circle_arc(g_array_circle_arc_val(g)[idx]); }
+int g_array_circle_arc_len(Geom* g) { return g_array_circle_arc_val(g).size(); }
 
 Array<IV3> g_array_v3i_val(Geom* g) {
   ensure(g->k == array_v3i_kind || g->k == array_v3d_kind, "NOT ARRAY_V3I");
@@ -205,15 +237,34 @@ Nested<TV2> g_poly_val(Geom* g) {
     return ((PolyGeom*)g)->val;
 }
 
-Geom* g_poly_fab(Geom* args) {
+Geom* g_polygon_fab(Geom* args) {
   Nested<TV2, false> v;
   for (auto arg : g_args_val(args)) 
     v.append(g_array_v2d_val(arg));
   v.freeze();
   return g_poly(v);
 }
-Geom* g_poly_elt(Geom* g, int idx) { return g_array_v2d(g_poly_val(g)[idx]); }
-int g_poly_len(Geom* g) { return g_poly_val(g).size(); }
+Geom* g_polygon_elt(Geom* g, int idx) { return g_array_v2d(g_poly_val(g)[idx]); }
+int g_polygon_len(Geom* g) { return g_poly_val(g).size(); }
+
+bool is_nested_circle_arc(Geom* g) {
+  return g->k == nested_circle_arc_kind;
+}
+
+Nested<CircleArc> g_nested_circle_arc_val(Geom* g) {
+  ensure(is_nested_circle_arc(g), "NOT NESTED_CIRCLE_ARC");
+  return ((NestedCircleArcGeom*)g)->val;
+}
+
+Geom* g_nested_circle_arc_fab(Geom* args) {
+  Nested<CircleArc, false> v;
+  for (auto arg : g_args_val(args)) 
+    v.append(g_array_circle_arc_val(arg));
+  v.freeze();
+  return g_nested_circle_arc(v);
+}
+Geom* g_nested_circle_arc_elt(Geom* g, int idx) { return g_array_circle_arc(g_nested_circle_arc_val(g)[idx]); }
+int g_nested_circle_arc_len(Geom* g) { return g_nested_circle_arc_val(g).size(); }
 
 bool is_nested_v3d(Geom* g) {
   return g->k == nested_v3d_kind || g->k == array_v3d_kind;
@@ -291,11 +342,17 @@ Geom* g_bbox2_max(Geom* g) { return g_array_v2d_elt(g, 1); }
 Geom* g_bbox3_min(Geom* g) { return g_array_v3d_elt(g, 0); }
 Geom* g_bbox3_max(Geom* g) { return g_array_v3d_elt(g, 1); }
 
+Geom* g_mesh_bounds(Geom* g) {
+  return g_bbox3(bbox(g_mesh_val(g).points));
+}
+Geom* g_polygon_bounds(Geom* g) {
+  return g_bbox2(bbox(g_poly_val(g)));
+}
 Geom* g_bbox(Geom* g) {
   if (g->k == mesh_kind)
-    return g_bbox3(bbox(g_mesh_val(g).points));
+    return g_mesh_bounds(g);
   else if (g->k == poly_kind)
-    return g_bbox2(bbox(g_poly_val(g)));
+    return g_polygon_bounds(g);
   else if (g->k == array_v2d_kind)
     return g_bbox2(bbox(g_array_v2d_val(g)));
   else if (g->k == array_v3d_kind)
@@ -320,20 +377,44 @@ Geom* g_centering(Geom* g) {
   auto c = g_center(g);
   return g_mov(g_mul(g_num(-1), c), g);
 }
+Geom* g_polygon_load(Geom* s) {
+  // TODO: LOAD SVG
+  return s;
+}
+
+Geom* g_mesh_load(Geom* s) { 
+  return new MeshGeom(read_soup(g_string_val(s)));
+}
+
 Geom* g_load(Geom* s) { 
   // TODO: LOAD SVG
-  return new MeshGeom(read_soup(g_string_val(s)));
+  return g_mesh_load(s);
+}
+
+Geom* g_mesh_save (Geom* s, Geom* g) { 
+  auto mesh = g_mesh_val(g);
+  write_mesh(g_string_val(s), mesh.soup, mesh.points);
+  return g;
+}
+
+Geom* g_polygon_save (Geom* s, Geom* g) { 
+  save_polygon(g_string_val(s), g_poly_val(g));
+  return g;
+}
+
+Geom* g_polyline_save (Geom* s, Geom* g) { 
+  save_polyline(g_string_val(s), g_nested_v2d_val(g));
+  return g;
 }
 
 Geom* g_save(Geom* s, Geom* g) { 
   // TODO: LOAD SVG
   if (g->k == mesh_kind) {
-    auto mesh = g_mesh_val(g);
-    write_mesh(g_string_val(s), mesh.soup, mesh.points);
+    g_mesh_save(s, g);
   } else if (g->k == poly_kind) {
-    save_polygon(g_string_val(s), g_poly_val(g));
+    g_polygon_save(s, g);
   } else if (g->k == nested_v2d_kind) {
-    save_polyline(g_string_val(s), g_nested_v2d_val(g));
+    g_polyline_save(s, g);
   }
   return g;
 }
@@ -416,15 +497,19 @@ Geom* g_string(std::string s) { return new StringGeom(s); }
 Geom* g_v2d(TV2 v) { return new V2dGeom(v); }
 Geom* g_v3d(TV3 v) { return new V3dGeom(v); }
 Geom* g_v3i(IV3 v) { return new V3iGeom(v); }
+Geom* g_circle_arc(CircleArc v) { return new CircleArcGeom(v); }
 Geom* g_mat(Matrix<T,4> mat)  { return new MatGeom(mat); }
 Geom* g_array_v2d(Array<TV2> line) { return new ArrayV2dGeom(line); }
 Geom* g_array_v2d(RawArray<TV2> line) { return g_array_v2d(line.copy()); }
 Geom* g_array_v3d(Array<TV3> line) { return new ArrayV3dGeom(line); }
+Geom* g_array_circle_arc(Array<CircleArc> arcs) { return new ArrayCircleArcGeom(arcs); }
+Geom* g_array_circle_arc(RawArray<CircleArc> arcs) { return g_array_circle_arc(arcs.copy()); }
 Geom* g_array_v3d(RawArray<TV3> line) { return g_array_v3d(line.copy()); }
 Geom* g_array_v3i(Array<IV3> line) { return new ArrayV3iGeom(line); }
 Geom* g_array_v3i(RawArray<IV3> line) { return g_array_v3i(line.copy()); }
 Geom* g_nested_v2d(Nested<TV2> polyline) { return new NestedV2dGeom(polyline); }
 Geom* g_nested_v3d(Nested<TV3> polyline) { return new NestedV3dGeom(polyline); }
+Geom* g_nested_circle_arc(Nested<CircleArc> arcz) { return new NestedCircleArcGeom(arcz); }
 Geom* g_poly(Nested<TV2> poly) { return new PolyGeom(poly); }
 Geom* g_mesh(Mesh mesh) { return new MeshGeom(mesh); }
 
@@ -491,27 +576,40 @@ Geom* g_poly (std::vector<Geom*> args) {
 }
 
 Geom* g_pi(void) { return new NumGeom(M_PI); }
-Geom* g_none2(void) { return new PolyGeom(none_poly()); }
-Geom* g_all2(void) { return new PolyGeom(all_poly()); }
-Geom* g_none3(void) { return new MeshGeom(none_mesh()); }
-Geom* g_all3(void) { return new MeshGeom(all_mesh()); }
+Geom* g_polygon_none(void) { return new PolyGeom(none_poly()); }
+Geom* g_none2(void) { return g_polygon_none(); }
+Geom* g_polygon_all(void) { return new PolyGeom(all_poly()); }
+Geom* g_all2(void) { return g_polygon_all(); }
+Geom* g_mesh_none(void) { return new MeshGeom(none_mesh()); }
+Geom* g_none3(void) { return g_mesh_none(); }
+Geom* g_mesh_all(void) { return new MeshGeom(all_mesh()); }
+Geom* g_all3(void) { return g_mesh_all(); }
+Geom* g_polygon_circle(float d) {
+  return new PolyGeom(circle_poly(d, 16));
+}
 Geom* g_circle(Geom* a) {
   if (a->k == expr_kind)
     return expr_circle(g_expr_val(a));
   else 
-    return new PolyGeom(circle_poly(g_num_val(a), 16));
+    return g_polygon_circle(g_num_val(a));
+}
+Geom* g_polygon_square(float d) {
+  return new PolyGeom(square_poly(d));
 }
 Geom* g_square(Geom* a) {
   if (a->k == expr_kind)
     return expr_square(g_expr_val(a));
   else 
-    return new PolyGeom(square_poly(g_num_val(a)));
+    return g_polygon_square(g_num_val(a));
+}
+Geom* g_polygon_square_lo_hi(Geom* lo, Geom* hi) {
+    return new PolyGeom(square_poly(g_v2d_val(lo), g_v2d_val(hi)));
 }
 Geom* g_square_lo_hi(Geom* lo, Geom* hi) {
   if (lo->k == expr_kind && hi->k == expr_kind)
     return expr_rect2(g_expr_val(lo), g_expr_val(hi));
   else 
-    return new PolyGeom(square_poly(g_v2d_val(lo), g_v2d_val(hi)));
+    return g_polygon_square_lo_hi(lo, hi);
 }
 Geom* g_letter(Geom* a) {
   char c = g_string_val(a)[0];
@@ -571,11 +669,19 @@ Geom* g_dither(Geom* g) {
     error("Bad args for dither"); return NULL;
   }
 }
-Geom* do_g_mul(Matrix<T,4> m, Geom* g, bool is_invert = false) { 
-  if (g->k == mesh_kind)
-    return new MeshGeom(mul(m, g_mesh_val(g), is_invert));
-  else if (g->k == poly_kind)
-    return g_poly(mul_poly(m, g_poly_val(g), is_invert));
+
+Mesh g_mesh_val_copy (Geom* g) {
+  return mesh_copy(g_mesh_val(g));
+}
+
+Geom* do_g_mul(Matrix<T,4> m, Geom* g) { 
+  if (g->k == mesh_kind) {
+    auto res = new MeshGeom(mesh_copy(mul(m, g_mesh_val_copy(g))));
+    printf("%p = (%s * %p)\n", res, matrix_to_str(m).c_str(), g);
+    printf("%p = %s\n", res, g_to_str_val(res).c_str());
+    return res;
+  } else if (g->k == poly_kind)
+    return g_poly(mul_poly(m, g_poly_val(g)));
   else if (g->k == array_v2d_kind)
     return g_array_v2d(mul(m, g_array_v2d_val(g)));
   else if (g->k == array_v3d_kind)
@@ -587,6 +693,12 @@ Geom* do_g_mul(Matrix<T,4> m, Geom* g, bool is_invert = false) {
   else {
     error("Bad mul kind"); return NULL;
   }
+}
+Geom* g_polygon_mul(Geom* m, Geom* g) {
+  return do_g_mul(g_mat_val(m), g);
+}
+Geom* g_mesh_mul(Geom* m, Geom* g) {
+  return do_g_mul(g_mat_val(m), g);
 }
 Geom* g_mul(Geom* a, Geom* b) { 
   if (a->k == mat_kind)
@@ -742,92 +854,186 @@ Geom* g_reflect_x(Geom* g) {
   if (g->k == expr_kind)
     return expr_reflect_x(g_expr_val(g));
   else 
-    return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1), g, true);
+    return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1), g);
 }
 Geom* g_reflect_y(Geom* g) { 
   if (g->k == expr_kind)
     return expr_reflect_y(g_expr_val(g));
   else 
-    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, true);
-}
-Geom* g_reflect_xy(Geom* g) {
-  if (g->k == expr_kind)
-    return expr_reflect_xy(g_expr_val(g));
-  else 
-    return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, false); // TODO: NORMALS BROKEN FOR POLYS
+    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g);
 }
 Geom* g_reflect_z(Geom* g) {
   if (g->k == expr_kind)
     return expr_reflect_z(g_expr_val(g));
   else 
-    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, true);
+    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g);
+}
+Geom* g_reflect_xy(Geom* g) {
+  if (g->k == expr_kind)
+    return expr_reflect_xy(g_expr_val(g));
+  else 
+    return do_g_mul(Matrix<T,4>(0,1,0,0, 1,0,0,0, 0,0,1,0, 0,0,0,1), g);
 }
 Geom* g_reflect_yz(Geom* g) {
   if (g->k == expr_kind)
     return expr_reflect_yz(g_expr_val(g));
   else 
-    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,-1,0,0,0,0,1), g, false);
+    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,1), g);
 }
 Geom* g_reflect_xz(Geom* g) {
   if (g->k == expr_kind)
     return expr_reflect_xz(g_expr_val(g));
-  else 
-    return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, false);
+  else
+    return do_g_mul(Matrix<T,4>(0,0,1,0, 0,1,0,0, 1,0,0,0, 0,0,0,1), g);
+}
+Geom* g_mesh_union(Geom* a, Geom* b) {
+  return new MeshGeom(mesh_copy(union_add(g_mesh_val_copy(a), g_mesh_val_copy(b))));
+}
+Geom* g_polygon_union(Geom* a, Geom* b) {
+  return g_poly(union_add(g_poly_val(a), g_poly_val(b)));
 }
 Geom* g_union(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)
-    return new MeshGeom(union_add(g_mesh_val(a), g_mesh_val(b)));
+    return g_mesh_union(a, b);
   else if (a->k == expr_kind && b->k == expr_kind)
     return expr_or(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
-    return new PolyGeom(union_add(g_poly_val(a), g_poly_val(b)));
+    return g_polygon_union(a, b);
   else {
     error("Bad args for union"); return NULL;
   }
 }
+Geom* g_mesh_intersection(Geom* a, Geom* b) {
+  auto res = new MeshGeom(mesh_copy(intersection(g_mesh_val_copy(a), g_mesh_val_copy(b))));
+  printf("%p = (%p & %p)\n", res, a, b);
+  printf("%p = %s\n", a, g_to_str_val(a).c_str());
+  printf("%p = %s\n", b, g_to_str_val(b).c_str());
+  printf("%p = %s\n", res, g_to_str_val(res).c_str());
+  return res;
+}
+Geom* g_polygon_intersection(Geom* a, Geom* b) {
+  return g_poly(intersection(g_poly_val(a), g_poly_val(b)));
+}
+Geom* g_nested_circle_arc_find_overlapping_offsets(float d, Geom* a) {
+  return new NestedCircleArcGeom(find_overlapping_offsets(g_nested_circle_arc_val(a), d));
+}
+Geom* g_nested_circle_arc_intersection(Geom* a, Geom* b) {
+  return new NestedCircleArcGeom(circle_arc_intersection(g_nested_circle_arc_val(a), g_nested_circle_arc_val(b)));
+}
+Geom* g_nested_circle_arc_intersection1(Geom* a) {
+  return new NestedCircleArcGeom(circle_arc_intersection(g_nested_circle_arc_val(a)));
+}
+static Nested<CircleArc> circle_arc_concat(Nested<CircleArc> a0, Nested<CircleArc> a1) {
+  Nested<CircleArc,false> res;
+  for (auto e0 : a0)
+    res.append(e0);
+  for (auto e1 : a1)
+    res.append(e1);
+  res.freeze();
+  return res;
+}
+Geom* g_nested_circle_arc_concat(Geom* a, Geom* b) {
+  return new NestedCircleArcGeom(circle_arc_concat(g_nested_circle_arc_val(a), g_nested_circle_arc_val(b)));
+}
+static Nested<CircleArc> nested_circle_arc_not (Nested<CircleArc> ca) {
+  Nested<CircleArc> res = ca.copy();
+  reverse_arcs(res);
+  return res;
+}
+Geom* g_nested_circle_arc_difference(Geom* a, Geom* b) {
+  return new NestedCircleArcGeom(circle_arc_union(g_nested_circle_arc_val(a), nested_circle_arc_not(g_nested_circle_arc_val(b))));
+}
+Geom* g_nested_circle_arc_not(Geom* a) {
+  return new NestedCircleArcGeom(nested_circle_arc_not(g_nested_circle_arc_val(a)));
+}
+Geom* g_nested_circle_arc_union(Geom* a, Geom* b) {
+  return new NestedCircleArcGeom(circle_arc_union(g_nested_circle_arc_val(a), g_nested_circle_arc_val(b)));
+}
+Geom* g_nested_circle_arc_open_offset(float r, Geom* g) {
+  return new NestedCircleArcGeom(offset_open_arcs(g_nested_circle_arc_val(g), r));
+}
+Geom* g_nested_circle_arc_closed_offset(float r, Geom* g) {
+  return new NestedCircleArcGeom(offset_arcs(g_nested_circle_arc_val(g), r));
+}
+Geom* g_nested_circle_arc_discretize(float max_deviation, int is_closed, Geom* g) {
+  return new NestedV2dGeom(discretize_nested_arcs(g_nested_circle_arc_val(g), is_closed, max_deviation));
+}
 Geom* g_intersection(Geom* a, Geom* b) { 
   if (a->k == mesh_kind && b->k == mesh_kind)
-    return new MeshGeom(intersection(g_mesh_val(a), g_mesh_val(b)));
+    return g_mesh_intersection(a, b);
   else if (a->k == expr_kind && b->k == expr_kind)
     return expr_and(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
-    return new PolyGeom(intersection(g_poly_val(a), g_poly_val(b)));
+    return g_polygon_intersection(a, b);
   else {
     error("Bad args for intersection"); return NULL;
   }
 }
+Geom* g_mesh_difference(Geom* a, Geom* b) {
+  auto res = new MeshGeom(mesh_copy(difference(g_mesh_val_copy(a), g_mesh_val_copy(b))));
+  printf("%p = (%p \\ %p)\n", res, a, b);
+  printf("%p = %s\n", a, g_to_str_val(a).c_str());
+  // g_mesh_save(g_string_fab("a.obj"), a);
+  printf("%p = %s\n", b, g_to_str_val(b).c_str());
+  // g_mesh_save(g_string_fab("b.obj"), b);
+  printf("%p = %s\n", res, g_to_str_val(res).c_str());
+  // g_mesh_save(g_string_fab("r.stl"), res);
+  return res;
+}
+Geom* g_polygon_difference(Geom* a, Geom* b) {
+  return g_poly(difference(g_poly_val(a), g_poly_val(b)));
+}
 Geom* g_difference(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)
-    return new MeshGeom(difference(g_mesh_val(a), g_mesh_val(b)));
+    return g_mesh_difference(a, b);
   else if (a->k == expr_kind && b->k == expr_kind)
     return expr_rem(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
-    return g_poly(difference(g_poly_val(a), g_poly_val(b)));
+    return g_polygon_difference(a, b);
   else {
     error("Bad args for difference"); return NULL;
   }
 }
+Geom* g_mesh_not(Geom* a) {
+  return new MeshGeom(mesh_copy(invert_mesh(g_mesh_val_copy(a))));
+}
+Geom* g_polygon_not(Geom* a) {
+  return g_poly(invert_poly(g_poly_val(a)));
+}
 Geom* g_not(Geom* a) {
   if (a->k == mesh_kind)
-    return new MeshGeom(invert_mesh(g_mesh_val(a)));
+    return g_mesh_not(a);
   else if (a->k == expr_kind)
     return expr_not(g_expr_val(a));
   else if (is_poly(a))
-    return g_poly(invert_poly(g_poly_val(a)));
+    return g_polygon_not(a);
   else {
     error("Bad args for not"); return NULL;
   }
 }
+Geom* g_mesh_offset(float r, Geom* g) {
+  // return new MeshGeom(offset_mesh(1, g_num_val(a), g_mesh_val(g)));
+  return new MeshGeom(mesh_copy(offset_mesh(r, g_mesh_val_copy(g))));
+}
+Geom* g_mesh_offset_rough(float r, Geom* g) {
+  // return new MeshGeom(offset_mesh(1, g_num_val(a), g_mesh_val(g)));
+  return new MeshGeom(mesh_copy(offset_mesh_rough(r, g_mesh_val_copy(g))));
+}
+Geom* g_polygon_offset(float r, Geom* g) {
+  return g_poly(offset_poly(16, r, g_poly_val(g)));
+}
+Geom* g_polyline2_offset(float r, Geom* g) {
+  return g_poly(offset_polyline(16, r, g_nested_v2d_val(g)));
+}
 Geom* g_offset(Geom* a, Geom* g) {
   if (g->k == mesh_kind) {
-    // return new MeshGeom(offset_mesh(1, g_num_val(a), g_mesh_val(g)));
-    return new MeshGeom(offset_mesh(g_num_val(a), g_mesh_val(g)));
+    return g_mesh_offset(g_num_val(a), g);
   } else if (a->k == expr_kind && g->k == expr_kind) {
     return expr_sub(g_expr_val(g), g_expr_val(a));
   } else if (g->k == nested_v2d_kind) {
-    return g_poly(offset_polyline(16, g_num_val(a), g_nested_v2d_val(g)));
+    return g_polyline2_offset(g_num_val(a), g);
   } else if (is_poly(g)) {
-    return g_poly(offset_poly(16, g_num_val(a), g_poly_val(g)));
+    return g_polygon_offset(g_num_val(a), g);
   } else {
     error("Bad args for offset"); return NULL;
   }
@@ -836,60 +1042,95 @@ Geom* g_hollow(Geom* a, Geom* m) { return g_difference(m, g_offset(g_num(-g_num_
 Geom* g_simplify(Geom* g) { return new MeshGeom(simplify_mesh(g_mesh_val(g))); }
 Geom* g_cleanup(Geom* g) { return new MeshGeom(cleanup_mesh(g_mesh_val(g))); }
 extern flo_t get_radius(void), get_threshold(void);
+Geom* g_mesh_slice(float z, Geom* g) {
+  return new PolyGeom(slice(z, g_mesh_val(g)));
+}
 Geom* g_slice(Geom* a, Geom* g) {
   if (a->k == num_kind && g->k == octree_kind) {
     return new PolyGeom(tree_slice(g_octree_val(g), g_num_val(a)));
   } else if (a->k == num_kind && g->k == expr_kind) {
     return new PolyGeom(tree_slice(expr_to_tree(g_expr_val(g), get_radius(), get_threshold()), g_num_val(a)));
   } else 
-    return new PolyGeom(slice(g_num_val(a), g_mesh_val(g)));
+    return g_mesh_slice(g_num_val(a), g);
+}
+Geom* g_mesh_extrude(float h, Geom* p) {
+  return new MeshGeom(extrude(h, g_poly_val(p)));
 }
 Geom* g_extrude(Geom* a, Geom* p) {
   if (a->k == expr_kind && p->k == expr_kind)
     return expr_extrude(g_expr_val(a), g_expr_val(p));
   else 
-    return new MeshGeom(extrude(g_num_val(a), g_poly_val(p)));
+    return g_mesh_extrude(g_num_val(a), p);
+}
+Geom* g_polygon_thicken(float d, Geom* l) {
+  return new PolyGeom(thicken(1, d, g_nested_v2d_val(l)));
+}
+Geom* g_mesh_thicken(float d, Geom* l) {
+  return new MeshGeom(thicken(1, d, g_nested_v3d_val(l)));
 }
 Geom* g_thicken(Geom* a, Geom* l) {
   if (is_nested_v2d(l))
-    return new PolyGeom(thicken(1, g_num_val(a), g_nested_v2d_val(l)));
+    return g_polygon_thicken(g_num_val(a), l);
   else //  (is_nested_v3d(l))
-    return new MeshGeom(thicken(1, g_num_val(a), g_nested_v3d_val(l)));
+    return g_mesh_thicken(g_num_val(a), l);
 }
 
+Geom* g_mesh_sphere(float d) {
+  return new MeshGeom(sphere_mesh(1, vec(0.0, 0.0, 0.0), 0.5 * d));
+}
 Geom* g_sphere(Geom* a) {
   if (a->k == expr_kind)
     return expr_sphere(g_expr_val(a));
   else
-    return new MeshGeom(sphere_mesh(1, vec(0.0, 0.0, 0.0), 0.5 * g_num_val(a)));
+    return g_mesh_sphere(g_num_val(a));
+}
+Geom* g_mesh_cube(float d) {
+  auto r = 0.5 * d; return new MeshGeom(cube_mesh(vec(-r, -r, -r), vec(r, r, r)));
 }
 Geom* g_cube(Geom* a) {
   if (a->k == expr_kind)
     return expr_cube(g_expr_val(a));
-  else {
-    auto d = g_num_val(a); auto r = 0.5 * d; return new MeshGeom(cube_mesh(vec(-r, -r, -r), vec(r, r, r)));
-  }
+  else
+    return g_mesh_cube(g_num_val(a));
+}
+Geom* g_mesh_cube_lo_hi(Geom* lo, Geom* hi) {
+  auto res = new MeshGeom(cube_mesh(g_v3d_val(lo), g_v3d_val(hi)));
+  printf("%p = cube(%s, %s)\n", res, g_to_str_val(lo).c_str(), g_to_str_val(hi).c_str());
+  printf("%p = %s\n", res, g_to_str_val(res).c_str());
+  return res;
 }
 Geom* g_cube_lo_hi(Geom* lo, Geom* hi) {
-  return new MeshGeom(cube_mesh(g_v3d_val(lo), g_v3d_val(hi)));
+  return g_mesh_cube_lo_hi(lo, hi);
+}
+Geom* g_mesh_cone(float d, Geom* p) {
+  return new MeshGeom(cone_mesh(d, g_poly_val(p)));
 }
 Geom* g_cone(Geom* a, Geom* p) {
   if (a->k == expr_kind && p->k == expr_kind)
     return expr_cone(g_expr_val(a), g_expr_val(p));
   else 
-    return new MeshGeom(cone_mesh(g_num_val(a), g_poly_val(p)));
+    return g_mesh_cone(g_num_val(a), p);
+}
+Geom* g_polygon_revolve(Geom* p) {
+  return new MeshGeom(revolve(16, g_poly_val(p)));
 }
 Geom* g_revolve(Geom* p) {
   if (p->k == expr_kind)
     return expr_xrevolve(g_expr_val(p));
   else 
-    return new MeshGeom(revolve(16, g_poly_val(p)));
+    return g_polygon_revolve(p);
+}
+Geom* g_mesh_hull(Geom* g) {
+  return new MeshGeom(quick_hull_mesh(g_mesh_val(g)));
+}
+Geom* g_polygon_hull(Geom* g) {
+  return new PolyGeom(quick_hull_poly(g_poly_val(g)));
 }
 Geom* g_hull(Geom* g) {
   if (g->k == mesh_kind)
-    return new MeshGeom(quick_hull_mesh(g_mesh_val(g)));
+    return g_mesh_hull(g);
   else if (g->k == poly_kind)
-    return new PolyGeom(quick_hull_poly(g_poly_val(g)));
+    return g_polygon_hull(g);
   else {
     error("Bad HULL type"); return NULL;
   }
