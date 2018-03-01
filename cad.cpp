@@ -1,5 +1,6 @@
 #include "cad.h"
 #include "ZippedView.h"
+#include <geode/geometry/arc_fitting.h>
 #include <geode/array/permute.h>
 #include <geode/array/sort.h>
 #include <geode/mesh/decimate.h>
@@ -516,18 +517,52 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
   // return gc_mesh(Mesh(const_soup(new_soup), pos));
 }
 
-Mesh simplify_mesh(Mesh mesh) {
-  // printf("STARTING SIMPLIFICATION\n");
+static int num_mesh = 0;
+
+Mesh write_next_mesh(Mesh mesh) {
+  std::stringstream ss;
+  ss << "bc-" << num_mesh << ".obj";
+  auto filename = ss.str();
+  printf("SAVING %s\n", filename.c_str());
+  write_mesh(filename, mesh.soup, mesh.points);
+  // printf("LOADING %s\n", filename.c_str());
+  // printf("AFTER  READING %s\n", mesh_to_str(mesh).c_str());
+  // auto mesh = fab_mesh(bc_mesh.soup->elements.copy(), bc_mesh.points.copy());
+  // auto mesh = const_mesh(read_soup(filename));
+  auto res_mesh = const_mesh(read_soup(filename));
+  num_mesh += 1;
+  return res_mesh;
+}
+
+Mesh mesh_copy(Mesh mesh) {
+  auto new_tris = mesh.soup->elements.copy();
+  auto new_points = mesh.points.copy();
+  return fab_mesh(new_tris, new_points);
+}
+
+Mesh simplify_mesh(Mesh bc_mesh) {
+  printf("STARTING SIMPLIFICATION\n");
+  // printf("BEFORE SIMPLIFICATION %s\n", mesh_to_str(bc_mesh).c_str());
+  auto mesh = write_next_mesh(bc_mesh);
+  // auto mesh = mesh_copy(bc_mesh);
   // report_simplify_mesh(mesh);
   Array<TV3> pos(mesh.points);
   auto topo = new_<MutableTriangleTopology>();
   topo->add_vertices(mesh.points.size());
-  for (auto face : mesh.soup->elements)
+  // for (auto vert : mesh.points) {
+  //   printf("ADDING VERT [%f,%f,%f]\n", vert.x, vert.y, vert.z);
+  // }
+  for (auto face : mesh.soup->elements) {
+    // printf("ADDING FACE [%d,%d,%d]\n", face.x, face.y, face.z);
     topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
+  }
   const auto X_id = topo->add_field(Field<TV3,VertexId>{mesh.points.copy()});
   simplify_inplace(topo, X_id, 1e-6);
   auto final_mesh = topo_to_mesh(topo, topo->field(X_id));
   // printf("BEFORE GC %d\n", field.size());
+  // printf("AFTER  SIMPLIFICATION %s\n", mesh_to_str(final_mesh).c_str());
+  printf("AFTER  SIMPLIFICATION\n");
+  write_next_mesh(final_mesh);
   return final_mesh;
 }
 
@@ -573,13 +608,39 @@ Nested<TV2> invert_poly(Nested<TV2> poly) {
   return pres;
 }
 
-Nested<TV2> mul_poly(Matrix<T,4> m, Nested<TV2> poly, bool is_invert) {
+template <class T>
+inline T
+fastMinor( Matrix<T,4> m, const int r0, const int r1, const int r2,
+                          const int c0, const int c1, const int c2)  {
+    return m[r0][c0] * (m[r1][c1]*m[r2][c2] - m[r1][c2]*m[r2][c1])
+         + m[r0][c1] * (m[r1][c2]*m[r2][c0] - m[r1][c0]*m[r2][c2])
+         + m[r0][c2] * (m[r1][c0]*m[r2][c1] - m[r1][c1]*m[r2][c0]);
+}
+
+template <class T>
+inline T
+determinant (Matrix<T,4> m) {
+    T sum = (T)0;
+
+    if (m[0][3] != 0.) sum -= m[0][3] * fastMinor(m, 1,2,3,0,1,2);
+    if (m[1][3] != 0.) sum += m[1][3] * fastMinor(m, 0,2,3,0,1,2);
+    if (m[2][3] != 0.) sum -= m[2][3] * fastMinor(m, 0,1,3,0,1,2);
+    if (m[3][3] != 0.) sum += m[3][3] * fastMinor(m, 0,1,2,0,1,2);
+
+    return sum;
+}
+
+Nested<TV2> mul_poly(Matrix<T,4> m, Nested<TV2> poly) {
   auto res = mul(m, poly);
+  auto det = determinant(m);
+  auto is_invert = det < 0;
   return is_invert ? invert_poly(res) : res;
 }
 
-Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour, bool is_invert) {
+Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour) {
   auto res = mul(m, contour);
+  auto det = determinant(m);
+  auto is_invert = det < 0;
   return is_invert ? invert_contour(res) : res;
 }
 
@@ -654,9 +715,10 @@ void save_polyline(std::string filename, Nested<TV2> polyline) {
 
 Mesh maybe_cleanup_mesh (Mesh mesh, bool is_cleanup) {
   // report_cleanup_mesh(mesh);
-  if (is_cleanup)
-    return cleanup_mesh(mesh);
-  else
+  if (is_cleanup) {
+    auto res = cleanup_mesh(mesh);
+    return res;
+  } else
     return mesh;
 }
 
@@ -975,14 +1037,18 @@ std::string matrix_to_str(Matrix<T,4> M) {
   ss << M.x[0][0] << "," << M.x[1][0] << "," << M.x[2][0] << "," << M.x[3][0] << ",";
   ss << M.x[0][1] << "," << M.x[1][1] << "," << M.x[2][1] << "," << M.x[3][1] << ",";
   ss << M.x[0][2] << "," << M.x[1][2] << "," << M.x[2][2] << "," << M.x[3][2] << ",";
-  ss << M.x[0][3] << "," << M.x[1][3] << "," << M.x[2][3] << "," << M.x[3][3] << ")";
+  ss << M.x[0][3] << "," << M.x[1][3] << "," << M.x[2][3] << "," << M.x[3][3];
   ss << ")";
   return ss.str();
 }
 
 Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_cleanup) {
   auto merge = concat_meshes(mesh0, mesh1);
-  return split_mesh(merge, 1, is_cleanup);
+  printf("INTERSECTION\n");
+  write_next_mesh(mesh0);
+  write_next_mesh(mesh1);
+  auto res = split_mesh(merge, 1, is_cleanup);
+  return res;
 }
 
 Mesh mesh_from(int start, Mesh mesh) {
@@ -1063,7 +1129,13 @@ Nested<TV2> slice(T z, Mesh mesh) {
 
 Mesh difference(Mesh mesh0, Mesh mesh1, bool is_cleanup) {
   auto merge = concat_meshes(mesh0, invert_mesh(mesh1));
-  return split_mesh(merge, 0, is_cleanup);
+  printf("DIFFERENCE\n");
+  write_next_mesh(mesh0);
+  write_next_mesh(mesh1);
+  // printf("INVERT MESH %s\n", mesh_to_str(mesh1).c_str());
+  auto res = split_mesh(merge, 0, is_cleanup);
+  // printf("DIFF CLEANUP %d\n", is_cleanup);
+  return res;
 }
 
 template<class ET>
@@ -1237,8 +1309,11 @@ TV2 mul(Matrix<T,4> m, TV2 pt) {
   return vec(res.x, res.y);
 }
 
-Mesh mul(Matrix<T,4> m, Mesh mesh, bool is_invert) {
+Mesh mul(Matrix<T,4> m, Mesh mesh) {
   auto res = Mesh(mesh.soup, mul(m, mesh.points));
+  auto det = determinant(m);
+  auto is_invert = det < 0;
+  // if ((det < 0) != is_invert_i) printf("IS-INVERT %d != det %f\n", is_invert_i, det);
   return is_invert ? invert_mesh(res) : res;
 }
 
@@ -1540,19 +1615,18 @@ Mesh check_mesh(Mesh mesh) {
   return mesh;
 }
 
-/*
-Mesh offset_mesh(int n, T rad, Mesh mesh) {
-  Array<TV3> pos(mesh.y);
-  auto topo = new_<TriangleTopology>(mesh.x->elements);
+Mesh offset_mesh_rough(T rad, Mesh mesh) {
+  Array<TV3> pos(mesh.points);
+  auto topo = new_<TriangleTopology>(mesh.soup->elements);
   auto new_mesh = rough_offset_mesh(topo, RawField<const TV3,VertexId>(pos), rad);
   auto new_soup = new_mesh.x->face_soup().x;
   Array<TV3> new_points;
   for (auto point : new_mesh.y.flat)
     new_points.append(point);
-  return tuple(const_mesh(new_soup), new_points);
-  return mesh;
+  return fab_mesh(new_soup, new_points);
 }
 
+/*
 Mesh offset_mesh(int n, T rad, Mesh mesh) {
   // Mesh res = none_mesh();
   Mesh res = mesh;

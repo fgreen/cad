@@ -4,8 +4,8 @@ CAD_ENV :=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))/..
 GUI = $(CAD_ENV)/gui/src
 GEODE = $(CAD_ENV)/geode
 COMMON_FLAGS = -g -O3 -march=native -mtune=native -funroll-loops -Wall -Winit-self -Woverloaded-virtual -Wsign-compare -fno-strict-aliasing -std=c++11 -Wno-array-bounds -Wno-unknown-pragmas -Wno-deprecated -fPIC -DNDEBUG -DBUILDING_geode -Wno-writable-strings
-COMMON_LIBS = $(GUI)/app.a -lportaudio -L/usr/local/Cellar/opencv/3.3.0_3/lib -lportaudio -lportmidi
-COMMON_LIBS += -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lopencv_imgcodecs -lopencv_videoio -lopencv_core
+COMMON_LIBS = $(GUI)/app.a -lportaudio -lportaudio -lportmidi #  -L/usr/local/Cellar/opencv/3.3.0_3/lib
+COMMON_LIBS += -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lopencv_core # -lopencv_imgcodecs  -lopencv_videoio
 COMMON_INCS = -I/usr/local/include/OpenEXR -I. -I/usr/local/include -I$(GUI) -I$(GEODE) -I$(GEODE)/build
 OS2 := $(strip $(shell uname))
 ifeq ($(OS2), Darwin)

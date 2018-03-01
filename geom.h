@@ -35,6 +35,12 @@ class V3dGeom : public Geom {
  V3dGeom(TV3 val) : Geom(v3d_kind), val(val) { }
 };
 
+class CircleArcGeom : public Geom {
+ public:
+  CircleArc val;
+ CircleArcGeom(CircleArc val) : Geom(circle_arc_kind), val(val) { }
+};
+
 class V3iGeom : public Geom {
  public:
   IV3 val;
@@ -65,6 +71,12 @@ class ArrayV3iGeom : public Geom {
  ArrayV3iGeom(Array<IV3> val) : Geom(array_v3i_kind), val(val) { }
 };
 
+class ArrayCircleArcGeom : public Geom {
+ public:
+  Array<CircleArc> val;
+ ArrayCircleArcGeom(Array<CircleArc> val) : Geom(array_circle_arc_kind), val(val) { }
+};
+
 class NestedV2dGeom : public Geom {
  public:
   Nested<TV2> val;
@@ -75,6 +87,12 @@ class NestedV3dGeom : public Geom {
  public:
   Nested<TV3> val;
  NestedV3dGeom(Nested<TV3> val) : Geom(nested_v3d_kind), val(val) { }
+};
+
+class NestedCircleArcGeom : public Geom {
+ public:
+  Nested<CircleArc> val;
+ NestedCircleArcGeom(Nested<CircleArc> val) : Geom(nested_circle_arc_kind), val(val) { }
 };
 
 class PolyGeom : public Geom {
@@ -93,30 +111,39 @@ class MeshGeom : public Geom {
 extern "C" int g_kind(Geom* g);
 
 extern bool all_args_kind (std::vector<Geom*> args, int kind);
+extern Geom* g_circle_arc (CircleArc v);
 extern Geom* g_array_v2d (std::vector<Geom*> args);
 extern Geom* g_array_v3d (std::vector<Geom*> args);
 extern Geom* g_array_v3i (std::vector<Geom*> args);
+extern Geom* g_array_circle_arc(Array<CircleArc> arcs);
 extern Geom* g_nested_v2d (std::vector<Geom*> args);
 extern Geom* g_nested_v3d (std::vector<Geom*> args);
+extern Geom* g_nested_circle_arc(Nested<CircleArc> arcz);
 extern Geom* g_poly (std::vector<Geom*> args);
+extern Geom* g_circle_arcs (std::vector<Geom*> args);
 
 extern "C" Geom* g_args_fab(void);
 extern "C" Geom* g_args_add(Geom* g, Geom* e);
 extern "C" int g_args_len(Geom* g);
-extern "C" Geom* g_num_fab(int a);
-extern "C" int g_num_value(Geom* g);
+extern "C" int g_args_free(Geom* g);
+extern "C" Geom* g_num_fab(float a);
+extern "C" float g_num_value(Geom* g);
 extern "C" Geom* g_string_fab(char* str);
 extern "C" int g_string_len(Geom* g);
 extern "C" char* g_string_c_str(Geom*);
-extern "C" Geom* g_v2d_fab(int x, int y);
-extern "C" int g_v2d_elt(Geom* g, int idx);
-extern "C" int g_v2d_x(Geom* g);
-extern "C" int g_v2d_y(Geom* g);
-extern "C" Geom* g_v3d_fab(int x, int y, int z);
-extern "C" int g_v3d_elt(Geom* g, int idx);
-extern "C" int g_v3d_x(Geom* g);
-extern "C" int g_v3d_y(Geom* g);
-extern "C" int g_v3d_z(Geom* g);
+extern "C" Geom* g_circle_arc_fab(float x, float y, float q);
+extern "C" float g_circle_arc_x(Geom* g);
+extern "C" float g_circle_arc_y(Geom* g);
+extern "C" float g_circle_arc_q(Geom* g);
+extern "C" Geom* g_v2d_fab(float x, float y);
+extern "C" float g_v2d_elt(Geom* g, int idx);
+extern "C" float g_v2d_x(Geom* g);
+extern "C" float g_v2d_y(Geom* g);
+extern "C" Geom* g_v3d_fab(float x, float y, float z);
+extern "C" float g_v3d_elt(Geom* g, int idx);
+extern "C" float g_v3d_x(Geom* g);
+extern "C" float g_v3d_y(Geom* g);
+extern "C" float g_v3d_z(Geom* g);
 extern "C" Geom* g_v3i_fab(int x, int y, int z);
 extern "C" int g_v3i_elt(Geom* g, int idx);
 extern "C" int g_v3i_x(Geom* g);
@@ -126,9 +153,9 @@ extern "C" Geom* g_bbox2_min(Geom* g);
 extern "C" Geom* g_bbox2_max(Geom* g);
 extern "C" Geom* g_bbox3_min(Geom* g);
 extern "C" Geom* g_bbox3_max(Geom* g);
-extern "C" Geom* g_mat_fab(int i00, int i01, int i02, int i03, int i10, int i11, int i12, int i13,
-                           int i20, int i21, int i22, int i23, int i30, int i31, int i32, int i33);
-extern "C" int g_mat_elt(Geom* g, int i, int j);
+extern "C" Geom* g_mat_fab(float i00, float i01, float i02, float i03, float i10, float i11, float i12, float i13,
+                           float i20, float i21, float i22, float i23, float i30, float i31, float i32, float i33);
+extern "C" float g_mat_elt(Geom* g, int i, int j);
 extern "C" Geom* g_array_v2d_fab(Geom* args);
 extern "C" Geom* g_array_v2d_elt(Geom* g, int idx);
 extern "C" int g_array_v2d_len(Geom* g);
@@ -138,18 +165,26 @@ extern "C" int g_array_v3d_len(Geom* g);
 extern "C" Geom* g_array_v3i_fab(Geom* args);
 extern "C" Geom* g_array_v3i_elt(Geom* g, int idx);
 extern "C" int g_array_v3i_len(Geom* g);
+extern "C" Geom* g_array_circle_arc_fab(Geom* args);
+extern "C" Geom* g_array_circle_arc_elt(Geom* g, int idx);
+extern "C" int g_array_circle_arc_len(Geom* g);
 extern "C" Geom* g_nested_v2d_fab(Geom* args);
 extern "C" Geom* g_nested_v2d_elt(Geom* g, int idx);
 extern "C" int g_nested_v2d_len(Geom* g);
 extern "C" Geom* g_nested_v3d_fab(Geom* args);
 extern "C" Geom* g_nested_v3d_elt(Geom* g, int idx);
 extern "C" int g_nested_v3d_len(Geom* g);
+extern "C" Geom* g_nested_circle_arc_fab(Geom* args);
+extern "C" Geom* g_nested_circle_arc_elt(Geom* g, int idx);
+extern "C" int g_nested_circle_arc_len(Geom* g);
 extern "C" Geom* g_poly_fab(Geom* args);
 extern "C" Geom* g_poly_elt(Geom* g, int idx);
 extern "C" int g_poly_len(Geom* g);
 extern "C" Geom* g_mesh_fab(Geom* points, Geom* faces);
 extern "C" Geom* g_mesh_points(Geom* g);
 extern "C" Geom* g_mesh_faces(Geom* g);
+extern "C" Geom* g_mesh_bounds(Geom* g);
+extern "C" Geom* g_mesh_load(Geom* g);
 extern "C" Geom* g_bbox(Geom* g);
 extern "C" Geom* g_dims(Geom* g);
 extern "C" Geom* g_center(Geom* g);
@@ -222,6 +257,69 @@ extern "C" Geom* g_taper(Geom* l, Geom* r0, Geom* r1, Geom* p);
 extern "C" Geom* g_to_mesh(Geom* g);
 extern "C" Geom* g_to_tree(Geom* g, Geom* rad, Geom* thresh);
 
+/// NEW API
+
+extern "C" Geom* g_mesh_all(void);
+extern "C" Geom* g_mesh_none(void);
+extern "C" Geom* g_mesh_save(Geom* s, Geom* g);
+extern "C" Geom* g_mesh_load(Geom* s);
+extern "C" Geom* g_mesh_mul(Geom* m, Geom* g);
+extern "C" Geom* g_mesh_intersection(Geom* a, Geom* b);
+extern "C" Geom* g_mesh_union(Geom* a, Geom* b);
+extern "C" Geom* g_mesh_difference(Geom* a, Geom* b);
+extern "C" Geom* g_mesh_not(Geom* a);
+extern "C" Geom* g_mesh_offset(float r, Geom* g);
+extern "C" Geom* g_mesh_offset_rough(float r, Geom* g);
+extern "C" Geom* g_mesh_simplify(Geom* g);
+extern "C" Geom* g_mesh_cleanup(Geom* g);
+extern "C" Geom* g_mesh_slice(float z, Geom* g);
+extern "C" Geom* g_mesh_hull(Geom* m);
+
+extern "C" int g_polygon_len(Geom* g);
+extern "C" Geom* g_polygon_fab(Geom* g);
+extern "C" Geom* g_polygon_elt(Geom* g, int i);
+extern "C" Geom* g_polygon_bounds(Geom* g);
+extern "C" Geom* g_polygon_all(void);
+extern "C" Geom* g_polygon_none(void);
+extern "C" Geom* g_polygon_save(Geom* s, Geom* g);
+extern "C" Geom* g_polygon_load(Geom* s);
+extern "C" Geom* g_polygon_revolve(Geom* s);
+extern "C" Geom* g_polygon_square(float d);
+extern "C" Geom* g_polygon_square_lo_hi(Geom* lo, Geom* hi);
+extern "C" Geom* g_polygon_circle(float d);
+extern "C" Geom* g_polygon_mul(Geom* m, Geom* g);
+extern "C" Geom* g_polygon_intersection(Geom* a, Geom* b);
+extern "C" Geom* g_polygon_union(Geom* a, Geom* b);
+extern "C" Geom* g_polygon_difference(Geom* a, Geom* b);
+extern "C" Geom* g_polygon_not(Geom* a);
+extern "C" Geom* g_polygon_offset(float r, Geom* g);
+extern "C" Geom* g_polygon_hull(Geom* m);
+extern "C" Geom* g_polygon_thicken(float d, Geom* m);
+
+extern "C" int   g_nested_circle_arc_len(Geom* g);
+extern "C" Geom* g_nested_circle_arc_fab(Geom* g);
+extern "C" Geom* g_nested_circle_arc_elt(Geom* g, int i);
+extern "C" Geom* g_nested_circle_arc_open_offset(float d, Geom* p);
+extern "C" Geom* g_nested_circle_arc_closed_offset(float d, Geom* p);
+extern "C" Geom* g_nested_circle_arc_discretize(float max_deviation, int is_closed, Geom* p);
+extern "C" Geom* g_nested_circle_arc_union(Geom* a, Geom* b);
+extern "C" Geom* g_nested_circle_arc_intersection(Geom* a, Geom* b);
+extern "C" Geom* g_nested_circle_arc_intersection1(Geom* a);
+extern "C" Geom* g_nested_circle_arc_concat(Geom* a, Geom* b);
+extern "C" Geom* g_nested_circle_arc_not(Geom* a);
+extern "C" Geom* g_nested_circle_arc_difference(Geom* a, Geom* b);
+extern "C" Geom* g_nested_circle_arc_bounds(Geom* g);
+extern "C" Geom* g_nested_circle_arc_find_overlapping_offsets(float d, Geom* a);
+
+extern "C" Geom* g_mesh_extrude(float d, Geom* p);
+extern "C" Geom* g_mesh_thicken(float d, Geom* l);
+extern "C" Geom* g_mesh_sphere(float d);
+extern "C" Geom* g_mesh_cube(float d);
+extern "C" Geom* g_mesh_cube_lo_hi(Geom* lo, Geom* hi);
+extern "C" Geom* g_mesh_cone(float h, Geom* p);
+extern "C" Geom* g_mesh_revolve(Geom* p);
+
+
 extern std::vector<Geom*> g_args_val(Geom* g);
 extern Geom* g_num(T a);
 extern T g_num_val(Geom* g);
@@ -248,6 +346,10 @@ extern Geom* g_array_v3d(Array<TV3> line);
 extern Geom* g_array_v3d(RawArray<TV3> line);
 extern Array<TV3> g_array_v3d_val(Geom* g);
 
+extern Geom* g_array_circle_arc(Array<CircleArc> arcs);
+extern Geom* g_array_circle_arc(RawArray<CircleArc> arcs);
+extern Array<CircleArc> g_array_circle_arc_val(Geom* g);
+
 extern Geom* g_array_v3i(Array<IV3> a);
 extern Array<IV3> g_array_v3i_val(Geom* g);
 
@@ -258,6 +360,9 @@ extern Nested<TV2> g_nested_v2d_val(Geom* g);
 extern Geom* g_nested_v3d(Nested<TV3> polyline);
 extern bool is_nested_v3d(Geom* g);
 extern Nested<TV3> g_nested_v3d_val(Geom* g);
+
+extern Geom* g_nested_circle_arc(Nested<CircleArc> arcs);
+extern Nested<CircleArc> g_nested_circle_arc_val(Geom* g);
 
 extern bool is_poly(Geom* g);
 extern Geom* g_poly(Nested<TV2> poly);

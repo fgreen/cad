@@ -11,7 +11,7 @@ props_t* props;
 defboolprop(is_show_status, false);
 defboolprop(is_show_lines, true);
 defboolprop(is_stdin_expr, false);
-defboolprop(is_show_normals, false);
+defboolprop(is_show_normals, true);
 defboolprop(is_epsilon_target, true);
 defboolprop(is_interpolating, true);
 defboolprop(is_timing, false);

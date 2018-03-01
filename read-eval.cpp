@@ -44,7 +44,7 @@ Token Tokenizer::do_get() {
   if (isdigit(c) || c == '.' || c == '-') {   // num?
     str += c;
     // TODO: REAL LEXER
-    while (isdigit(s->peek()) || s->peek() == '.' || isalpha(s->peek())) { 
+    while (isdigit(s->peek()) || s->peek() == '.' || isalpha(s->peek()) || s->peek() == '-') { 
       char c = s->get();
       isHex = isHex || c == 'x';
       str += c;
@@ -315,7 +315,7 @@ Geom* parse_factor(Tokenizer& s) {
           } else if (tok1.sym == "zmov") {
             g = g_zmov(args[0], args[1]);
           } else if (tok1.sym == "mag") {
-            g = g_mag(args[0], args[3]);
+            g = g_mag(args[0], args[1]);
           } else if (tok1.sym == "mag1") {
             g = g_mag1(args[0], args[1]);
           } else if (tok1.sym == "xmag") {
