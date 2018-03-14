@@ -1039,6 +1039,8 @@ Geom* g_not(Geom* a) {
     return expr_not(g_expr_val(a));
   else if (is_poly(a))
     return g_polygon_not(a);
+  else if (a->k == nested_circle_arc_kind)
+    return g_nested_circle_arc_not(a);
   else {
     error("Bad args for not"); return NULL;
   }
