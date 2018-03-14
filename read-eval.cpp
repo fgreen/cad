@@ -273,6 +273,8 @@ Geom* parse_factor(Tokenizer& s) {
             return g_nested_v2d(args);
           } else if (tok1.sym == "poly" || tok1.sym == "polygon") {
             return g_poly(args);
+          } else if (tok1.sym == "arcs") {
+            return g_arcs(args);
           } else if (tok1.sym == "mesh") {
             if (args[0]->k == octree_kind || args[0]->k == expr_kind) {
               return g_to_mesh(args[0]);
@@ -290,6 +292,8 @@ Geom* parse_factor(Tokenizer& s) {
             return g_thicken(args[0], args[1]);
           } else if (tok1.sym == "offset") {
             return g_offset(args[0], args[1]);
+          } else if (tok1.sym == "open-offset") {
+            return g_open_offset(args[0], args[1]);
           } else if (tok1.sym == "dither") {
             return g_dither(args[0]);
           } else if (tok1.sym == "hollow") {
@@ -699,6 +703,11 @@ int display_poly (Nested<TV2> poly) {
   return dl;
 }
 
+int display_arcs (Nested<CircleArc> arcs) {
+  auto poly = discretize_nested_arcs(arcs, true, 0.1);
+  return display_poly(poly);
+}
+
 int display_polyline2 (Nested<TV2> polyline) {
   int dl = glGenLists(1);
   glNewList(dl, GL_COMPILE);
@@ -766,6 +775,8 @@ int compile_geom (std::string expr, bool is_show_lines, bool is_show_normals) {
     return display_poly(g_poly_val(shape));
   else if (shape->k == mesh_kind)
     return display_mesh(g_mesh_val(shape), is_show_lines, is_show_normals);
+  else if (shape->k == nested_circle_arc_kind)
+    return display_arcs(g_nested_circle_arc_val(shape));
   else if (shape->k == v3d_kind)
     return display_v3d(g_v3d_val(shape));
   else if (shape->k == v2d_kind)

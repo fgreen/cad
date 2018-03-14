@@ -119,6 +119,7 @@ extern Geom* g_array_circle_arc(Array<CircleArc> arcs);
 extern Geom* g_nested_v2d (std::vector<Geom*> args);
 extern Geom* g_nested_v3d (std::vector<Geom*> args);
 extern Geom* g_nested_circle_arc(Nested<CircleArc> arcz);
+extern Geom* g_arcs (std::vector<Geom*> args);
 extern Geom* g_poly (std::vector<Geom*> args);
 extern Geom* g_circle_arcs (std::vector<Geom*> args);
 
@@ -241,6 +242,7 @@ extern "C" Geom* g_union(Geom* a, Geom* b);
 extern "C" Geom* g_difference(Geom* a, Geom* b);
 extern "C" Geom* g_not(Geom* a);
 extern "C" Geom* g_offset(Geom* a, Geom* g);
+extern "C" Geom* g_open_offset(Geom* a, Geom* g);
 extern "C" Geom* g_hollow(Geom* a, Geom* m);
 extern "C" Geom* g_simplify(Geom* g);
 extern "C" Geom* g_cleanup(Geom* g);
@@ -362,6 +364,7 @@ extern bool is_nested_v3d(Geom* g);
 extern Nested<TV3> g_nested_v3d_val(Geom* g);
 
 extern Geom* g_nested_circle_arc(Nested<CircleArc> arcs);
+extern Geom* g_arcs(Nested<TV2> arcz);
 extern Nested<CircleArc> g_nested_circle_arc_val(Geom* g);
 
 extern bool is_poly(Geom* g);

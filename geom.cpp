@@ -172,12 +172,15 @@ Array<CircleArc> g_array_circle_arc_val(Geom* g) {
   ensure(g->k == array_circle_arc_kind, "NOT ARRAY_CIRCLE_ARC");
   return ((ArrayCircleArcGeom*)g)->val;
 }
-Geom* g_array_circle_arc_fab(Geom* args) {
+Array<CircleArc> g_array_circle_arc(Array<TV2> args) {
   Array<CircleArc> v;
-  for (auto arg : g_args_val(args)) 
-    v.append(g_circle_arc_val(arg));
-  return g_array_circle_arc(v);
+  for (auto arg : args) {
+    CircleArc arc(arg.x, arg.y, 0.0);
+    v.append(arc);
+  }
+  return v;
 }
+Array<CircleArc> g_array_circle_arc(RawArray<TV2> line) { return g_array_circle_arc(line.copy()); }
 Geom* g_array_circle_arc_elt(Geom* g, int idx) { return g_circle_arc(g_array_circle_arc_val(g)[idx]); }
 int g_array_circle_arc_len(Geom* g) { return g_array_circle_arc_val(g).size(); }
 
@@ -221,6 +224,13 @@ Geom* g_nested_v2d_fab(Geom* args) {
     v.append(g_array_v2d_val(arg));
   v.freeze();
   return g_nested_v2d(v);
+}
+Geom* g_nested_circle_arc(Nested<TV2> args) {
+  Nested<CircleArc, false> v;
+  for (auto arg : args) 
+    v.append(g_array_circle_arc(arg));
+  v.freeze();
+  return new NestedCircleArcGeom(v);
 }
 Geom* g_nested_v2d_elt(Geom* g, int idx) { return g_array_v2d(g_nested_v2d_val(g)[idx]); }
 int g_nested_v2d_len(Geom* g) { return g_nested_v2d_val(g).size(); }
@@ -574,6 +584,22 @@ Geom* g_poly (std::vector<Geom*> args) {
   lines.freeze();
   return new PolyGeom(lines);
 }
+Geom* g_arcs (std::vector<Geom*> args) {
+  Nested< TV2,false > lines;
+  if (all_args_kind(args, array_v2d_kind)) {
+    for (auto arg : args)
+      lines.append(g_array_v2d_val(arg));
+  } else if (all_args_kind(args, v2d_kind)) {
+    Array< TV2 > points;
+    for (auto arg : args)
+      points.append(g_v2d_val(arg));
+    lines.append(points);
+  } else {
+    error("Bad Poly Args"); return NULL;
+  }
+  lines.freeze();
+  return g_nested_circle_arc(lines);
+}
 
 Geom* g_pi(void) { return new NumGeom(M_PI); }
 Geom* g_polygon_none(void) { return new PolyGeom(none_poly()); }
@@ -899,6 +925,8 @@ Geom* g_union(Geom* a, Geom* b) {
     return expr_or(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
     return g_polygon_union(a, b);
+  else if (a->k == nested_circle_arc_kind && b->k == nested_circle_arc_kind)
+    return g_nested_circle_arc_union(a, b);
   else {
     error("Bad args for union"); return NULL;
   }
@@ -965,6 +993,8 @@ Geom* g_intersection(Geom* a, Geom* b) {
     return expr_and(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
     return g_polygon_intersection(a, b);
+  else if (a->k == nested_circle_arc_kind && b->k == nested_circle_arc_kind)
+    return g_nested_circle_arc_intersection(a, b);
   else {
     error("Bad args for intersection"); return NULL;
   }
@@ -990,6 +1020,8 @@ Geom* g_difference(Geom* a, Geom* b) {
     return expr_rem(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
     return g_polygon_difference(a, b);
+  else if (a->k == nested_circle_arc_kind && b->k == nested_circle_arc_kind)
+    return g_nested_circle_arc_difference(a, b);
   else {
     error("Bad args for difference"); return NULL;
   }
@@ -1025,6 +1057,13 @@ Geom* g_polygon_offset(float r, Geom* g) {
 Geom* g_polyline2_offset(float r, Geom* g) {
   return g_poly(offset_polyline(16, r, g_nested_v2d_val(g)));
 }
+Geom* g_open_offset(Geom* a, Geom* g) {
+  if (g->k == nested_circle_arc_kind) {
+    return g_nested_circle_arc_open_offset(g_num_val(a), g);
+  } else {
+    error("Bad args for offset"); return NULL;
+  }
+}
 Geom* g_offset(Geom* a, Geom* g) {
   if (g->k == mesh_kind) {
     return g_mesh_offset(g_num_val(a), g);
@@ -1032,6 +1071,8 @@ Geom* g_offset(Geom* a, Geom* g) {
     return expr_sub(g_expr_val(g), g_expr_val(a));
   } else if (g->k == nested_v2d_kind) {
     return g_polyline2_offset(g_num_val(a), g);
+  } else if (g->k == nested_circle_arc_kind) {
+    return g_nested_circle_arc_closed_offset(g_num_val(a), g);
   } else if (is_poly(g)) {
     return g_polygon_offset(g_num_val(a), g);
   } else {

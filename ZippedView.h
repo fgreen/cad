@@ -76,6 +76,7 @@ template<class... Types> struct ZippedView {
     Iterator& operator--() { --i; return *this; }
     Iterator& operator++() { ++i; return *this; }
     Iterator operator+(const IndexDiffT rhs) const { return Iterator{*view, i+rhs}; }
+    Iterator operator-(const IndexDiffT rhs) const { return Iterator{*view, i-rhs}; }
     Iterator& operator+=(const IndexDiffT rhs) { i += rhs; return *this; }
     Ref operator*() const { return Ref{view, i}; }
 
