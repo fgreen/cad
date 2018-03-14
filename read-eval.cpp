@@ -292,7 +292,7 @@ Geom* parse_factor(Tokenizer& s) {
             return g_thicken(args[0], args[1]);
           } else if (tok1.sym == "offset") {
             return g_offset(args[0], args[1]);
-          } else if (tok1.sym == "open-offset") {
+          } else if (tok1.sym == "open_offset") {
             return g_open_offset(args[0], args[1]);
           } else if (tok1.sym == "dither") {
             return g_dither(args[0]);
